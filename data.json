@@ -1,6 +1,28 @@
 {
-  "customers": [],
-  "works": [],
+  "customers": [
+    {
+      "id": 1757166065453,
+      "name": "ATG",
+      "phone": "",
+      "address": "",
+      "createdAt": "2025-09-06T13:41:05.453Z"
+    }
+  ],
+  "works": [
+    {
+      "id": 1757166094451,
+      "customerId": 1757166065453,
+      "customerName": "ATG",
+      "date": "2025-09-06",
+      "materialType": "1",
+      "paintType": "2",
+      "description": "e",
+      "quantity": 1,
+      "unitPrice": 200,
+      "price": 200,
+      "createdAt": "2025-09-06T13:41:34.451Z"
+    }
+  ],
   "payments": [],
-  "lastUpdated": "2025-09-06T13:05:18.366Z"
+  "lastUpdated": "2025-09-06T13:45:00.748Z"
 }

@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Mercury Müşteri ve İşlem Takip Sistemi</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -63,6 +66,7 @@
                             </select>
                             <input type="date" id="workDate" required>
                             <input type="text" id="materialType" placeholder="Malzeme türü yazın (örn: Ahşap, MDF, Lamine...)" required>
+                            <input type="text" id="paintType" placeholder="Boya türü yazın (örn: Su bazlı, Yağ bazlı, Vernik...)" required>
                             <textarea id="workDescription" placeholder="Yapılan iş" required></textarea>
                             <div class="input-row">
                                 <input type="number" id="workQuantity" step="1" min="1" placeholder="Adet" value="1" required>
@@ -240,6 +244,72 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Modal Popup -->
+    <div id="customerDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user"></i> Müşteri Detayları</h3>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Müşteri detayları buraya yüklenecek -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-close" id="modalCloseBtn">
+                    <i class="fas fa-check"></i> Tamam
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Silme Onay Modal -->
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content delete-modal">
+            <div class="modal-header delete-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Müşteri Silme Onayı</h3>
+                <button class="modal-close" id="closeDeleteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="deleteModalBody">
+                <!-- Silme onay içeriği buraya yüklenecek -->
+            </div>
+            <div class="modal-footer delete-footer">
+                <button class="btn-cancel" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> İptal
+                </button>
+                <button class="btn-delete" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Sil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- İşlem Silme Onay Modal -->
+    <div id="deleteWorkConfirmModal" class="modal">
+        <div class="modal-content delete-modal">
+            <div class="modal-header delete-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> İşlem Silme Onayı</h3>
+                <button class="modal-close" id="closeDeleteWorkModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="deleteWorkModalBody">
+                <!-- İşlem silme onay içeriği buraya yüklenecek -->
+            </div>
+            <div class="modal-footer delete-footer">
+                <button class="btn-cancel" id="cancelDeleteWorkBtn">
+                    <i class="fas fa-times"></i> İptal
+                </button>
+                <button class="btn-delete" id="confirmDeleteWorkBtn">
+                    <i class="fas fa-trash"></i> Sil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=1.1"></script>
 </body>
 </html>

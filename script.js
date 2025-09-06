@@ -8,6 +8,7 @@ class CustomerWorkManager {
         this.currentFilter = 'all';
         this.currentSort = 'name';
         this.selectedCustomer = null;
+        this.currentDeleteWorkId = null;
         this.initializeEventListeners();
         this.setDefaultDate();
         this.initializeData();
@@ -152,7 +153,70 @@ class CustomerWorkManager {
             this.exportDebtReportToExcel();
         });
 
+        // Modal event listener'ları
+        document.getElementById('closeModal').addEventListener('click', () => {
+            this.closeModal();
+        });
 
+        document.getElementById('modalCloseBtn').addEventListener('click', () => {
+            this.closeModal();
+        });
+
+        // Modal dışına tıklayınca kapat
+        document.getElementById('customerDetailsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'customerDetailsModal') {
+                this.closeModal();
+            }
+        });
+
+        // ESC tuşu ile modal kapat
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeModal();
+                this.closeDeleteModal();
+                this.closeDeleteWorkModal();
+            }
+        });
+
+        // Silme modal event listener'ları
+        document.getElementById('closeDeleteModal').addEventListener('click', () => {
+            this.closeDeleteModal();
+        });
+
+        document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+            this.closeDeleteModal();
+        });
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            this.confirmDeleteCustomer();
+        });
+
+        // Silme modal dışına tıklayınca kapat
+        document.getElementById('deleteConfirmModal').addEventListener('click', (e) => {
+            if (e.target.id === 'deleteConfirmModal') {
+                this.closeDeleteModal();
+            }
+        });
+
+        // İşlem silme modal event listener'ları
+        document.getElementById('closeDeleteWorkModal').addEventListener('click', () => {
+            this.closeDeleteWorkModal();
+        });
+
+        document.getElementById('cancelDeleteWorkBtn').addEventListener('click', () => {
+            this.closeDeleteWorkModal();
+        });
+
+        document.getElementById('confirmDeleteWorkBtn').addEventListener('click', () => {
+            this.confirmDeleteWork();
+        });
+
+        // İşlem silme modal dışına tıklayınca kapat
+        document.getElementById('deleteWorkConfirmModal').addEventListener('click', (e) => {
+            if (e.target.id === 'deleteWorkConfirmModal') {
+                this.closeDeleteWorkModal();
+            }
+        });
 
         // Tab sistemi event listener'ları
         this.initializeTabs();
@@ -289,12 +353,13 @@ class CustomerWorkManager {
         const selectedCustomerId = parseInt(document.getElementById('selectedCustomer').value);
         const workDate = document.getElementById('workDate').value;
         const materialType = document.getElementById('materialType').value;
+        const paintType = document.getElementById('paintType').value;
         const workDescription = document.getElementById('workDescription').value.trim();
         const quantity = parseInt(document.getElementById('workQuantity').value);
         const unitPrice = parseFloat(document.getElementById('workUnitPrice').value);
 
         // Validasyon
-        if (!selectedCustomerId || !workDate || !materialType || !workDescription || isNaN(quantity) || quantity <= 0 || isNaN(unitPrice) || unitPrice <= 0) {
+        if (!selectedCustomerId || !workDate || !materialType || !paintType || !workDescription || isNaN(quantity) || quantity <= 0 || isNaN(unitPrice) || unitPrice <= 0) {
             this.showNotification('Lütfen tüm alanları doğru şekilde doldurun!', 'error');
             return;
         }
@@ -321,6 +386,7 @@ class CustomerWorkManager {
                     customerName: customer.name,
                     date: workDate,
                     materialType: materialType,
+                    paintType: paintType,
                     description: workDescription,
                     quantity: quantity,
                     unitPrice: unitPrice,
@@ -424,15 +490,66 @@ class CustomerWorkManager {
 
     // İşlemi sil
     async deleteWork(id) {
-        if (confirm('Bu işlemi silmek istediğinizden emin misiniz?')) {
-            try {
-                const response = await fetch(`/api/works/${id}`, {
+        console.log('deleteWork çağrıldı, ID:', id);
+        // Silinecek işlemi bul
+        const work = this.works.find(w => w.id === id);
+        if (!work) {
+            this.showNotification('Silinecek işlem bulunamadı!', 'error');
+            return;
+        }
+
+        // Modal içeriğini oluştur
+        const modalContent = `
+            <p><strong>Bu işlemi silmek istediğinizden emin misiniz?</strong></p>
+            
+            <div class="delete-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Bu işlem geri alınamaz!</span>
+            </div>
+
+            <div class="delete-info">
+                <h4>Silinecek İşlem:</h4>
+                <div class="work-item">
+                    <div class="work-date">${this.formatDate(work.date)}</div>
+                    <div class="work-desc">${this.escapeHtml(work.description)}</div>
+                    <div class="work-details">
+                        Müşteri: ${this.escapeHtml(work.customerName)} | 
+                        Malzeme: ${this.escapeHtml(work.materialType || 'Belirtilmemiş')} | 
+                        Boya: ${this.escapeHtml(work.paintType || 'Belirtilmemiş')} | 
+                        Adet: ${work.quantity || 1} | 
+                        Fiyat: ₺${work.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Modal içeriğini yükle ve aç
+        document.getElementById('deleteWorkModalBody').innerHTML = modalContent;
+        this.currentDeleteWorkId = id; // Silinecek işlem ID'sini sakla
+        this.openDeleteWorkModal();
+    }
+
+    // İşlem silme onayı
+    async confirmDeleteWork() {
+        if (!this.currentDeleteWorkId) {
+            return;
+        }
+
+        const workId = this.currentDeleteWorkId;
+
+        try {
+            const response = await fetch(`/api/works/${workId}`, {
                     method: 'DELETE'
                 });
 
                 if (response.ok) {
-                    this.works = this.works.filter(work => work.id !== id);
+                this.works = this.works.filter(work => work.id !== workId);
                     this.updateDisplay();
+                
+                // Modal'ı kapat
+                this.closeDeleteWorkModal();
+                this.currentDeleteWorkId = null;
+                
                     this.showNotification('İşlem silindi!', 'info');
                 } else {
                     this.showNotification('İşlem silinirken hata oluştu!', 'error');
@@ -442,7 +559,6 @@ class CustomerWorkManager {
                 this.showNotification('İşlem silinirken hata oluştu!', 'error');
             }
         }
-    }
 
     // Müşteri sil
     async deleteCustomer() {
@@ -455,19 +571,43 @@ class CustomerWorkManager {
         const customerWorks = this.works.filter(work => work.customerId === this.selectedCustomer.id);
         const customerPayments = this.payments.filter(payment => payment.customerId === this.selectedCustomer.id);
 
-        if (customerWorks.length > 0 || customerPayments.length > 0) {
-            const message = `"${customerName}" müşterisini silmek istediğinizden emin misiniz?\n\nBu müşteriye ait:\n- ${customerWorks.length} işlem\n- ${customerPayments.length} ödeme\n\nBu işlem geri alınamaz!`;
+        // Modal içeriğini oluştur
+        let modalContent = `
+            <p><strong>"${this.escapeHtml(customerName)}"</strong> müşterisini silmek istediğinizden emin misiniz?</p>
             
-            if (!confirm(message)) {
-                return;
-            }
-        } else {
-            if (!confirm(`"${customerName}" müşterisini silmek istediğinizden emin misiniz?`)) {
-                return;
-            }
+            <div class="delete-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Bu işlem geri alınamaz!</span>
+            </div>
+        `;
+
+        if (customerWorks.length > 0 || customerPayments.length > 0) {
+            modalContent += `
+                <div class="delete-info">
+                    <h4>Bu müşteriye ait:</h4>
+                    <ul>
+                        <li>${customerWorks.length} işlem</li>
+                        <li>${customerPayments.length} ödeme</li>
+                    </ul>
+                    <p><strong>Bu veriler de silinecektir!</strong></p>
+                </div>
+            `;
         }
 
-        try {
+        // Modal içeriğini yükle ve aç
+        document.getElementById('deleteModalBody').innerHTML = modalContent;
+        this.openDeleteModal();
+    }
+
+    // Müşteri silme onayı
+    async confirmDeleteCustomer() {
+        if (!this.selectedCustomer) {
+            return;
+        }
+
+        const customerName = this.selectedCustomer.name;
+
+            try {
             const response = await fetch(`/api/customers/${this.selectedCustomer.id}`, {
                     method: 'DELETE'
                 });
@@ -482,6 +622,9 @@ class CustomerWorkManager {
                     this.updateDisplay();
                     this.hideCustomerDebtInfo();
                 this.selectedCustomer = null;
+                
+                // Modal'ı kapat
+                this.closeDeleteModal();
                 
                 this.showNotification(`"${customerName}" müşterisi ve ilgili veriler silindi!`, 'info');
                 } else {
@@ -499,6 +642,7 @@ class CustomerWorkManager {
         this.updateSummary();
         this.updateWorkList();
         this.updateCustomerList();
+        this.updateCustomerDropdowns();
     }
 
     // Özet bilgileri güncelle
@@ -826,6 +970,7 @@ class CustomerWorkManager {
         const unitPrice = work.unitPrice || work.price;
         const formattedUnitPrice = unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
         const materialType = work.materialType || 'Belirtilmemiş';
+        const paintType = work.paintType || 'Belirtilmemiş';
         
         return `
             <div class="work-card" data-id="${work.id}">
@@ -838,6 +983,10 @@ class CustomerWorkManager {
                     <div class="work-material">
                         <i class="fas fa-cube"></i>
                         <span>Malzeme: ${this.escapeHtml(materialType)}</span>
+                    </div>
+                    <div class="work-paint">
+                        <i class="fas fa-paint-brush"></i>
+                        <span>Boya: ${this.escapeHtml(paintType)}</span>
                     </div>
                     <div class="work-quantity">Adet: ${quantity}</div>
                     <div class="work-unit-price">Birim Fiyat: ₺${formattedUnitPrice}</div>
@@ -911,20 +1060,21 @@ class CustomerWorkManager {
         let csvContent = '\uFEFF';
         
         // Başlık satırı
-        csvContent += 'Müşteri Adı,Tarih,Malzeme Türü,Yapılan İş,Adet,Birim Fiyat,Toplam Fiyat (₺),Eklenme Tarihi\n';
+        csvContent += 'Müşteri Adı,Tarih,Malzeme Türü,Boya Türü,Yapılan İş,Adet,Birim Fiyat,Toplam Fiyat (₺),Eklenme Tarihi\n';
         
         // İşlem verileri
         this.works.forEach(work => {
             const customerName = this.escapeCSV(work.customerName);
             const date = this.formatDateForCSV(work.date);
             const materialType = this.escapeCSV(work.materialType || 'Belirtilmemiş');
+            const paintType = this.escapeCSV(work.paintType || 'Belirtilmemiş');
             const description = this.escapeCSV(work.description);
             const quantity = work.quantity || 1;
             const unitPrice = (work.unitPrice || work.price).toFixed(2).replace('.', ',');
             const price = work.price.toFixed(2).replace('.', ',');
             const createdDate = this.formatDateForCSV(work.createdAt);
             
-            csvContent += `${customerName},${date},${materialType},${description},${quantity},${unitPrice},${price},${createdDate}\n`;
+            csvContent += `${customerName},${date},${materialType},${paintType},${description},${quantity},${unitPrice},${price},${createdDate}\n`;
         });
         
         // Özet bilgileri ekle
@@ -1178,6 +1328,54 @@ class CustomerWorkManager {
     }
 
 
+    // Modal açma
+    openModal() {
+        const modal = document.getElementById('customerDetailsModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Sayfa kaydırmayı engelle
+    }
+
+    // Modal kapama
+    closeModal() {
+        const modal = document.getElementById('customerDetailsModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto'; // Sayfa kaydırmayı geri aç
+    }
+
+    // Silme modal açma
+    openDeleteModal() {
+        const modal = document.getElementById('deleteConfirmModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Sayfa kaydırmayı engelle
+    }
+
+    // Silme modal kapama
+    closeDeleteModal() {
+        const modal = document.getElementById('deleteConfirmModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto'; // Sayfa kaydırmayı geri aç
+    }
+
+    // İşlem silme modal açma
+    openDeleteWorkModal() {
+        console.log('openDeleteWorkModal çağrıldı');
+        const modal = document.getElementById('deleteWorkConfirmModal');
+        if (!modal) {
+            console.error('deleteWorkConfirmModal bulunamadı!');
+            return;
+        }
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Sayfa kaydırmayı engelle
+        console.log('Modal açıldı');
+    }
+
+    // İşlem silme modal kapama
+    closeDeleteWorkModal() {
+        const modal = document.getElementById('deleteWorkConfirmModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto'; // Sayfa kaydırmayı geri aç
+    }
+
     // Müşteri detaylarını görüntüle
     viewCustomerDetails() {
         if (!this.selectedCustomer) {
@@ -1193,41 +1391,81 @@ class CustomerWorkManager {
         const totalPaid = customerPayments.reduce((sum, payment) => sum + payment.amount, 0);
         const remainingDebt = totalAmount - totalPaid;
 
-        let details = `MÜŞTERİ DETAYLARI\n`;
-        details += `================\n\n`;
-        details += `Ad: ${customer.name}\n`;
-        details += `Telefon: ${customer.phone || 'Belirtilmemiş'}\n`;
-        details += `Adres: ${customer.address || 'Belirtilmemiş'}\n`;
-        details += `Kayıt Tarihi: ${this.formatDate(customer.createdAt)}\n\n`;
-        details += `BORÇ BİLGİLERİ\n`;
-        details += `==============\n`;
-        details += `Toplam Borç: ₺${totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}\n`;
-        details += `Ödenen: ₺${totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}\n`;
-        details += `Kalan Borç: ₺${remainingDebt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}\n`;
-        details += `İşlem Sayısı: ${customerWorks.length}\n\n`;
-        
+        // Modal içeriğini oluştur
+        let modalContent = `
+            <h4><i class="fas fa-user"></i> Müşteri Bilgileri</h4>
+            <div class="info-row">
+                <span class="info-label">Ad:</span>
+                <span class="info-value">${this.escapeHtml(customer.name)}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Telefon:</span>
+                <span class="info-value">${customer.phone || 'Belirtilmemiş'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Adres:</span>
+                <span class="info-value">${customer.address || 'Belirtilmemiş'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Kayıt Tarihi:</span>
+                <span class="info-value">${this.formatDate(customer.createdAt)}</span>
+            </div>
+
+            <h4><i class="fas fa-chart-line"></i> Borç Bilgileri</h4>
+            <div class="info-row">
+                <span class="info-label">Toplam Borç:</span>
+                <span class="info-value">₺${totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ödenen:</span>
+                <span class="info-value">₺${totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Kalan Borç:</span>
+                <span class="info-value">₺${remainingDebt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">İşlem Sayısı:</span>
+                <span class="info-value">${customerWorks.length}</span>
+            </div>
+        `;
+
+        // İşlemler bölümü
         if (customerWorks.length > 0) {
-            details += `İŞLEMLER\n`;
-            details += `=========\n`;
+            modalContent += `<h4><i class="fas fa-tools"></i> İşlemler (${customerWorks.length})</h4>`;
             customerWorks.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach((work, index) => {
-                details += `${index + 1}. ${this.formatDate(work.date)} - ${work.description}\n`;
-                details += `   Malzeme: ${work.materialType || 'Belirtilmemiş'}, Adet: ${work.quantity || 1}, Fiyat: ₺${work.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}\n\n`;
-            });
-        }
-        
-        if (customerPayments.length > 0) {
-            details += `ÖDEMELER\n`;
-            details += `=========\n`;
-            customerPayments.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach((payment, index) => {
-                details += `${index + 1}. ${this.formatDate(payment.date)} - ₺${payment.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} (${payment.method})\n`;
-                if (payment.note) {
-                    details += `   Not: ${payment.note}\n`;
-                }
-                details += `\n`;
+                modalContent += `
+                    <div class="work-item">
+                        <div class="work-date">${this.formatDate(work.date)}</div>
+                        <div class="work-desc">${this.escapeHtml(work.description)}</div>
+                        <div class="work-details">
+                            Malzeme: ${this.escapeHtml(work.materialType || 'Belirtilmemiş')} | 
+                            Boya: ${this.escapeHtml(work.paintType || 'Belirtilmemiş')} | 
+                            Adet: ${work.quantity || 1} | 
+                            Fiyat: ₺${work.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                `;
             });
         }
 
-        alert(details);
+        // Ödemeler bölümü
+        if (customerPayments.length > 0) {
+            modalContent += `<h4><i class="fas fa-money-bill-wave"></i> Ödemeler (${customerPayments.length})</h4>`;
+            customerPayments.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach((payment, index) => {
+                modalContent += `
+                    <div class="payment-item">
+                        <div class="payment-date">${this.formatDate(payment.date)}</div>
+                        <div class="payment-amount">₺${payment.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</div>
+                        <div class="payment-method">${payment.method}${payment.note ? ' - ' + this.escapeHtml(payment.note) : ''}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Modal içeriğini yükle ve aç
+        document.getElementById('modalBody').innerHTML = modalContent;
+        this.openModal();
     }
 }
 
