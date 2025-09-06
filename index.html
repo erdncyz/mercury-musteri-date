@@ -310,6 +310,45 @@
         </div>
     </div>
 
+    <!-- İşlem Düzenleme Modal -->
+    <div id="editWorkModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> İşlem Düzenle</h3>
+                <button class="modal-close" id="closeEditWorkModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editWorkForm">
+                    <select id="editSelectedCustomer" required>
+                        <option value="">Müşteri seçin</option>
+                    </select>
+                    <input type="date" id="editWorkDate" required>
+                    <input type="text" id="editMaterialType" placeholder="Malzeme türü yazın (örn: Ahşap, MDF, Lamine...)" required>
+                    <input type="text" id="editPaintType" placeholder="Boya türü yazın (örn: Su bazlı, Yağ bazlı, Vernik...)" required>
+                    <textarea id="editWorkDescription" placeholder="Yapılan iş" required></textarea>
+                    <div class="input-row">
+                        <input type="number" id="editWorkQuantity" step="1" min="1" placeholder="Adet" value="1" required>
+                        <input type="number" id="editWorkUnitPrice" step="0.01" min="0" placeholder="Adet Fiyatı (₺)" required>
+                    </div>
+                    <div class="total-price-display">
+                        <span>Toplam Fiyat: </span>
+                        <span id="editTotalPriceDisplay">₺0.00</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancelEditWorkBtn">
+                    <i class="fas fa-times"></i> İptal
+                </button>
+                <button class="btn-save" id="saveEditWorkBtn">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js?v=1.1"></script>
 </body>
 </html>

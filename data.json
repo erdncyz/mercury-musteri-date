@@ -1,28 +1,69 @@
 {
   "customers": [
     {
-      "id": 1757166065453,
+      "id": 1757167221548,
       "name": "ATG",
-      "phone": "",
-      "address": "",
-      "createdAt": "2025-09-06T13:41:05.453Z"
+      "phone": "5458743948",
+      "address": "ÇANKIRI YOLU 15. KM ASELSAN YANI AKYURT ANKARA",
+      "createdAt": "2025-09-06T14:00:21.548Z"
+    },
+    {
+      "id": 1757167476293,
+      "name": "ali güler",
+      "phone": "5555",
+      "address": "siteler",
+      "createdAt": "2025-09-06T14:04:36.293Z"
     }
   ],
   "works": [
     {
-      "id": 1757166094451,
-      "customerId": 1757166065453,
+      "id": 1757167419101,
+      "customerId": 1757167221548,
       "customerName": "ATG",
       "date": "2025-09-06",
-      "materialType": "1",
-      "paintType": "2",
-      "description": "e",
-      "quantity": 1,
-      "unitPrice": 200,
-      "price": 200,
-      "createdAt": "2025-09-06T13:41:34.451Z"
+      "materialType": "DKP",
+      "paintType": "STATİK BOYALI ",
+      "description": "COFFER",
+      "quantity": 2500,
+      "unitPrice": 125,
+      "price": 312500,
+      "createdAt": "2025-09-06T14:03:39.101Z"
+    },
+    {
+      "id": 1757167505150,
+      "customerId": 1757167476293,
+      "customerName": "ali güler",
+      "date": "2025-09-06",
+      "materialType": "paslanmaz",
+      "paintType": "gold kaplama",
+      "description": "orion sehpa",
+      "quantity": 2,
+      "unitPrice": 4500,
+      "price": 9000,
+      "createdAt": "2025-09-06T14:05:05.150Z"
     }
   ],
-  "payments": [],
-  "lastUpdated": "2025-09-06T13:45:00.748Z"
+  "payments": [
+    {
+      "id": 1757167318810,
+      "customerId": 1757167221548,
+      "customerName": "ATG",
+      "date": "2025-09-06",
+      "amount": 250000,
+      "method": "Çek",
+      "note": "ORHAN BEY TARAFINDAN GERÇEKLEŞTİRİLDİ.",
+      "createdAt": "2025-09-06T14:01:58.810Z"
+    },
+    {
+      "id": 1757167441455,
+      "customerId": 1757167221548,
+      "customerName": "ATG",
+      "date": "2025-09-06",
+      "amount": 62500,
+      "method": "Nakit",
+      "note": "ORHAN BEY",
+      "createdAt": "2025-09-06T14:04:01.455Z"
+    }
+  ],
+  "lastUpdated": "2025-09-06T14:05:05.150Z"
 }

@@ -9,6 +9,7 @@ class CustomerWorkManager {
         this.currentSort = 'name';
         this.selectedCustomer = null;
         this.currentDeleteWorkId = null;
+        this.currentEditWorkId = null;
         this.initializeEventListeners();
         this.setDefaultDate();
         this.initializeData();
@@ -175,6 +176,7 @@ class CustomerWorkManager {
                 this.closeModal();
                 this.closeDeleteModal();
                 this.closeDeleteWorkModal();
+                this.closeEditWorkModal();
             }
         });
 
@@ -216,6 +218,35 @@ class CustomerWorkManager {
             if (e.target.id === 'deleteWorkConfirmModal') {
                 this.closeDeleteWorkModal();
             }
+        });
+
+        // İşlem düzenleme modal event listener'ları
+        document.getElementById('closeEditWorkModal').addEventListener('click', () => {
+            this.closeEditWorkModal();
+        });
+
+        document.getElementById('cancelEditWorkBtn').addEventListener('click', () => {
+            this.closeEditWorkModal();
+        });
+
+        document.getElementById('saveEditWorkBtn').addEventListener('click', () => {
+            this.saveEditWork();
+        });
+
+        // İşlem düzenleme modal dışına tıklayınca kapat
+        document.getElementById('editWorkModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editWorkModal') {
+                this.closeEditWorkModal();
+            }
+        });
+
+        // İşlem düzenleme formunda toplam fiyat hesaplama
+        document.getElementById('editWorkQuantity').addEventListener('input', () => {
+            this.calculateEditTotalPrice();
+        });
+
+        document.getElementById('editWorkUnitPrice').addEventListener('input', () => {
+            this.calculateEditTotalPrice();
         });
 
         // Tab sistemi event listener'ları
@@ -545,6 +576,7 @@ class CustomerWorkManager {
                 if (response.ok) {
                 this.works = this.works.filter(work => work.id !== workId);
                     this.updateDisplay();
+                    this.updateCustomerDebtInfo(); // Müşteri borç bilgilerini güncelle
                 
                 // Modal'ı kapat
                 this.closeDeleteWorkModal();
@@ -835,6 +867,10 @@ class CustomerWorkManager {
         // Ödeme formu için dropdown
         const paymentSelect = document.getElementById('paymentCustomer');
         paymentSelect.innerHTML = '<option value="">Müşteri seçin...</option>';
+
+        // İşlem düzenleme formu için dropdown
+        const editSelect = document.getElementById('editSelectedCustomer');
+        editSelect.innerHTML = '<option value="">Müşteri seçin</option>';
         
         this.customers.forEach(customer => {
             // İşlem formu için
@@ -842,12 +878,18 @@ class CustomerWorkManager {
             workOption.value = customer.id;
             workOption.textContent = customer.name;
             workSelect.appendChild(workOption);
-            
+
             // Ödeme formu için
             const paymentOption = document.createElement('option');
             paymentOption.value = customer.id;
             paymentOption.textContent = customer.name;
             paymentSelect.appendChild(paymentOption);
+
+            // İşlem düzenleme formu için
+            const editOption = document.createElement('option');
+            editOption.value = customer.id;
+            editOption.textContent = customer.name;
+            editSelect.appendChild(editOption);
         });
     }
 
@@ -992,14 +1034,19 @@ class CustomerWorkManager {
                     <div class="work-unit-price">Birim Fiyat: ₺${formattedUnitPrice}</div>
                 </div>
                 <div class="work-price">Toplam: ₺${formattedPrice}</div>
-                <button class="delete-btn" onclick="customerWorkManager.deleteWork(${work.id})">
-                    <i class="fas fa-trash"></i> Sil
-                </button>
+                <div class="work-actions">
+                    <button class="edit-btn" onclick="customerWorkManager.editWork(${work.id})">
+                        <i class="fas fa-edit"></i> Düzenle
+                    </button>
+                    <button class="delete-btn" onclick="customerWorkManager.deleteWork(${work.id})">
+                        <i class="fas fa-trash"></i> Sil
+                    </button>
+                </div>
             </div>
         `;
     }
 
-    // Silme butonları için event listener ekle
+    // Silme ve düzenleme butonları için event listener ekle
     addDeleteEventListeners() {
         // Event delegation kullanarak dinamik olarak eklenen butonları yakala
         document.getElementById('workList').addEventListener('click', (e) => {
@@ -1007,6 +1054,10 @@ class CustomerWorkManager {
                 const workCard = e.target.closest('.work-card');
                 const workId = parseInt(workCard.dataset.id);
                 this.deleteWork(workId);
+            } else if (e.target.closest('.edit-btn')) {
+                const workCard = e.target.closest('.work-card');
+                const workId = parseInt(workCard.dataset.id);
+                this.editWork(workId);
             }
         });
     }
@@ -1374,6 +1425,138 @@ class CustomerWorkManager {
         const modal = document.getElementById('deleteWorkConfirmModal');
         modal.classList.remove('show');
         document.body.style.overflow = 'auto'; // Sayfa kaydırmayı geri aç
+    }
+
+    // İşlem düzenleme modal açma
+    openEditWorkModal() {
+        const modal = document.getElementById('editWorkModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Sayfa kaydırmayı engelle
+    }
+
+    // İşlem düzenleme modal kapama
+    closeEditWorkModal() {
+        const modal = document.getElementById('editWorkModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto'; // Sayfa kaydırmayı geri aç
+        this.currentEditWorkId = null;
+    }
+
+    // İşlem düzenleme modal'ını aç
+    editWork(id) {
+        const work = this.works.find(w => w.id === id);
+        if (!work) {
+            this.showNotification('Düzenlenecek işlem bulunamadı!', 'error');
+            return;
+        }
+
+        // Form alanlarını doldur
+        document.getElementById('editSelectedCustomer').value = work.customerId;
+        document.getElementById('editWorkDate').value = work.date;
+        document.getElementById('editMaterialType').value = work.materialType || '';
+        document.getElementById('editPaintType').value = work.paintType || '';
+        document.getElementById('editWorkDescription').value = work.description;
+        document.getElementById('editWorkQuantity').value = work.quantity || 1;
+        document.getElementById('editWorkUnitPrice').value = work.unitPrice || work.price;
+
+        // Toplam fiyatı hesapla
+        this.calculateEditTotalPrice();
+
+        // Modal'ı aç
+        this.currentEditWorkId = id;
+        this.openEditWorkModal();
+    }
+
+    // Düzenleme formunda toplam fiyat hesapla
+    calculateEditTotalPrice() {
+        const quantity = parseFloat(document.getElementById('editWorkQuantity').value) || 0;
+        const unitPrice = parseFloat(document.getElementById('editWorkUnitPrice').value) || 0;
+        const totalPrice = quantity * unitPrice;
+        
+        document.getElementById('editTotalPriceDisplay').textContent = 
+            `₺${totalPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`;
+    }
+
+    // İşlem düzenleme kaydet
+    async saveEditWork() {
+        if (!this.currentEditWorkId) {
+            return;
+        }
+
+        const selectedCustomerId = parseInt(document.getElementById('editSelectedCustomer').value);
+        const workDate = document.getElementById('editWorkDate').value;
+        const materialType = document.getElementById('editMaterialType').value;
+        const paintType = document.getElementById('editPaintType').value;
+        const workDescription = document.getElementById('editWorkDescription').value.trim();
+        const quantity = parseInt(document.getElementById('editWorkQuantity').value);
+        const unitPrice = parseFloat(document.getElementById('editWorkUnitPrice').value);
+
+        // Validasyon
+        if (!selectedCustomerId || !workDate || !materialType || !paintType || !workDescription || isNaN(quantity) || quantity <= 0 || isNaN(unitPrice) || unitPrice <= 0) {
+            this.showNotification('Lütfen tüm alanları doğru şekilde doldurun!', 'error');
+            return;
+        }
+
+        // Müşteriyi bul
+        const customer = this.customers.find(c => c.id === selectedCustomerId);
+        if (!customer) {
+            this.showNotification('Seçilen müşteri bulunamadı!', 'error');
+            return;
+        }
+
+        // Toplam fiyatı hesapla
+        const totalPrice = quantity * unitPrice;
+
+        try {
+            // API'ye güncellenmiş işlem gönder
+            const response = await fetch(`/api/works/${this.currentEditWorkId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    customerId: selectedCustomerId,
+                    customerName: customer.name,
+                    date: workDate,
+                    materialType: materialType,
+                    paintType: paintType,
+                    description: workDescription,
+                    quantity: quantity,
+                    unitPrice: unitPrice,
+                    price: totalPrice
+                })
+            });
+
+            if (response.ok) {
+                // Yerel veriyi güncelle
+                const workIndex = this.works.findIndex(w => w.id === this.currentEditWorkId);
+                if (workIndex !== -1) {
+                    this.works[workIndex] = {
+                        ...this.works[workIndex],
+                        customerId: selectedCustomerId,
+                        customerName: customer.name,
+                        date: workDate,
+                        materialType: materialType,
+                        paintType: paintType,
+                        description: workDescription,
+                        quantity: quantity,
+                        unitPrice: unitPrice,
+                        price: totalPrice
+                    };
+                }
+
+                this.updateDisplay();
+                this.updateCustomerDebtInfo();
+                this.closeEditWorkModal();
+                
+                this.showNotification('İşlem başarıyla güncellendi!', 'success');
+            } else {
+                this.showNotification('İşlem güncellenirken hata oluştu!', 'error');
+            }
+        } catch (error) {
+            console.error('İşlem güncelleme hatası:', error);
+            this.showNotification('İşlem güncellenirken hata oluştu!', 'error');
+        }
     }
 
     // Müşteri detaylarını görüntüle

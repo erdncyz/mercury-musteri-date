@@ -173,6 +173,37 @@ app.delete('/api/customers/:id', async (req, res) => {
     }
 });
 
+// İşlem güncelle
+app.put('/api/works/:id', async (req, res) => {
+    try {
+        const data = await readData();
+        const workId = parseInt(req.params.id);
+        
+        // İşlemi bul
+        const workIndex = data.works.findIndex(work => work.id === workId);
+        if (workIndex === -1) {
+            return res.status(404).json({ error: 'İşlem bulunamadı' });
+        }
+        
+        // İşlemi güncelle
+        data.works[workIndex] = {
+            ...data.works[workIndex],
+            ...req.body,
+            id: workId,
+            lastUpdated: new Date().toISOString()
+        };
+        
+        const success = await writeData(data);
+        if (success) {
+            res.json({ message: 'İşlem güncellendi', work: data.works[workIndex] });
+        } else {
+            res.status(500).json({ error: 'İşlem güncellenemedi' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'İşlem güncelleme hatası' });
+    }
+});
+
 // Tüm verileri temizle
 app.delete('/api/data', async (req, res) => {
     try {
